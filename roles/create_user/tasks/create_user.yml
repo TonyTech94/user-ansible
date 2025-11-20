@@ -1,0 +1,33 @@
+- name: Создать пользователя {{ user.name }}
+  ansible.builtin.user:
+    name: "{{ user.name }}"
+    password: "{{ user.password | password_hash('sha512') }}"
+    groups: docker
+    append: yes
+    create_home: yes
+    shell: /bin/bash
+
+- name: Создать директорию .ssh для {{ user.name }}
+  ansible.builtin.file:
+    path: "/home/{{ user.name }}/.ssh"
+    state: directory
+    owner: "{{ user.name }}"
+    group: "{{ user.name }}"
+    mode: '0700'
+
+- name: Сгенерировать SSH ключи для {{ user.name }}
+  community.crypto.openssh_keypair:
+    path: "/home/{{ user.name }}/.ssh/id_rsa"
+    owner: "{{ user.name }}"
+    group: "{{ user.name }}"
+    type: rsa
+    size: 2048
+  register: keypair
+
+- name: Добавить публичный ключ в authorized_keys для {{ user.name }}
+  ansible.builtin.copy:
+    content: "{{ keypair.public_key }}"
+    dest: "/home/{{ user.name }}/.ssh/authorized_keys"
+    owner: "{{ user.name }}"
+    group: "{{ user.name }}"
+    mode: '0600'

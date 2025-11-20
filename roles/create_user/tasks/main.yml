@@ -1,0 +1,16 @@
+---
+- name: Загрузить зашифрованные переменные пользователей
+  ansible.builtin.include_vars:
+    file: ../vars/vault.yml
+    name: users_data
+
+- name: Убедиться, что группа docker существует
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Создать пользователей
+  ansible.builtin.include_tasks: create_user.yml
+  loop: "{{ users_data.users }}"
+  loop_control:
+    loop_var: user
